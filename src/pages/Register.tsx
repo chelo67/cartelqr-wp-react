@@ -66,50 +66,97 @@ export default function Register() {
     };
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
-            <Header />
-            <main className="flex-1 flex items-center justify-center p-6 py-12">
-                <div className="max-w-md w-full">
-                    <div className="bg-card border border-border rounded-2xl p-8 shadow-sm animate-fade-in">
-                        <div className="text-center mb-8">
-                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <UserPlus className="w-8 h-8 text-primary" />
+        <div className="min-h-screen bg-background">
+            <main className="h-screen flex">
+                {/* Left Side - Registration Form */}
+                <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
+                    <div className="max-w-md w-full animate-fade-in">
+                        <div className="mb-8">
+                            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-primary to-accent rounded-2xl mb-6 shadow-lg shadow-primary/20">
+                                <UserPlus className="w-7 h-7 text-white" />
                             </div>
-                            <h1 className="text-3xl font-bold">Crear Cuenta</h1>
-                            <p className="text-muted-foreground mt-2">Únete a la comunidad de Koonetix</p>
+                            <h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                                Únete a Koonetix
+                            </h1>
+                            <p className="text-muted-foreground text-lg">
+                                Crea tu cuenta y comienza a gestionar tus carteles digitales
+                            </p>
                         </div>
 
                         {error && (
-                            <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-3 flex items-center gap-2 mb-6 text-sm">
-                                <AlertCircle className="w-4 h-4" />
-                                {error}
+                            <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-xl p-4 flex items-start gap-3 mb-6 animate-shake">
+                                <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                                <p className="text-sm font-medium">{error}</p>
                             </div>
                         )}
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="firstName">Nombre</Label>
-                                    <Input id="firstName" name="firstName" required value={formData.firstName} onChange={handleInputChange} />
+                                    <Label htmlFor="firstName" className="text-sm font-semibold">
+                                        Nombre
+                                    </Label>
+                                    <Input
+                                        id="firstName"
+                                        name="firstName"
+                                        required
+                                        placeholder="Juan"
+                                        value={formData.firstName}
+                                        onChange={handleInputChange}
+                                        className="h-11 text-base bg-secondary/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="lastName">Apellido</Label>
-                                    <Input id="lastName" name="lastName" required value={formData.lastName} onChange={handleInputChange} />
+                                    <Label htmlFor="lastName" className="text-sm font-semibold">
+                                        Apellido
+                                    </Label>
+                                    <Input
+                                        id="lastName"
+                                        name="lastName"
+                                        required
+                                        placeholder="Pérez"
+                                        value={formData.lastName}
+                                        onChange={handleInputChange}
+                                        className="h-11 text-base bg-secondary/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                    />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="username">Nombre de Usuario</Label>
-                                <Input id="username" name="username" required value={formData.username} onChange={handleInputChange} />
+                                <Label htmlFor="username" className="text-sm font-semibold">
+                                    Nombre de Usuario
+                                </Label>
+                                <Input
+                                    id="username"
+                                    name="username"
+                                    required
+                                    placeholder="juanperez"
+                                    value={formData.username}
+                                    onChange={handleInputChange}
+                                    className="h-11 text-base bg-secondary/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" name="email" type="email" required value={formData.email} onChange={handleInputChange} />
+                                <Label htmlFor="email" className="text-sm font-semibold">
+                                    Email
+                                </Label>
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    required
+                                    placeholder="nombre@ejemplo.com"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    className="h-11 text-base bg-secondary/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password">Contraseña</Label>
+                                <Label htmlFor="password" className="text-sm font-semibold">
+                                    Contraseña
+                                </Label>
                                 <div className="relative">
                                     <Input
                                         id="password"
@@ -117,14 +164,14 @@ export default function Register() {
                                         type={showPassword ? "text" : "password"}
                                         required
                                         placeholder="••••••••"
-                                        className="pr-10"
+                                        className="h-11 text-base pr-12 bg-secondary/30 border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                                         value={formData.password}
                                         onChange={handleInputChange}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-secondary/50"
                                     >
                                         {showPassword ? (
                                             <EyeOff className="w-5 h-5" />
@@ -133,28 +180,103 @@ export default function Register() {
                                         )}
                                     </button>
                                 </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Mínimo 8 caracteres
+                                </p>
                             </div>
 
-                            <Button type="submit" variant="hero" className="w-full text-lg h-12 mt-4" disabled={loading}>
+                            <Button
+                                type="submit"
+                                variant="hero"
+                                className="w-full text-base h-12 font-bold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all mt-6"
+                                disabled={loading}
+                            >
                                 {loading ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin mr-2" />
                                         Registrando...
                                     </>
                                 ) : (
-                                    "Crear Cuenta"
+                                    <>
+                                        <UserPlus className="w-5 h-5 mr-2" />
+                                        Crear Cuenta
+                                    </>
                                 )}
                             </Button>
                         </form>
 
-                        <div className="mt-8 pt-6 border-t text-center text-sm">
-                            <span className="text-muted-foreground">¿Ya tienes cuenta? </span>
-                            <Link to="/login" className="text-primary font-semibold hover:underline">Inicia sesión</Link>
+                        <div className="mt-8 pt-6 border-t border-border/50 text-center">
+                            <p className="text-sm text-muted-foreground">
+                                ¿Ya tienes cuenta?{" "}
+                                <Link
+                                    to="/login"
+                                    className="text-primary font-bold hover:text-primary/80 transition-colors inline-flex items-center gap-1 group"
+                                >
+                                    Inicia sesión
+                                    <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+                                </Link>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side - Decorative */}
+                <div className="hidden lg:flex flex-1 relative overflow-hidden bg-gradient-to-br from-accent via-accent/90 to-primary p-12 items-center justify-center">
+                    {/* Animated Background Pattern */}
+                    <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-0 -left-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-float"></div>
+                        <div className="absolute top-1/3 -right-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-float" style={{ animationDelay: '2s' }}></div>
+                        <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-float" style={{ animationDelay: '4s' }}></div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="relative z-10 text-white max-w-lg">
+                        <div className="mb-8">
+                            <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-semibold mb-6">
+                                🚀 Comienza Gratis
+                            </div>
+                            <h2 className="text-5xl font-black mb-6 leading-tight">
+                                Todo lo que necesitas para crecer
+                            </h2>
+                            <p className="text-xl text-white/90 leading-relaxed">
+                                Únete a cientos de negocios que ya están usando Koonetix para mejorar su presencia digital.
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex items-start gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <span className="text-2xl">✅</span>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold mb-1">Sin Costos Ocultos</h3>
+                                    <p className="text-sm text-white/80">Comienza gratis y escala cuando lo necesites</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <span className="text-2xl">🎯</span>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold mb-1">Fácil de Usar</h3>
+                                    <p className="text-sm text-white/80">Interfaz intuitiva, sin conocimientos técnicos</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <span className="text-2xl">💬</span>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold mb-1">Soporte 24/7</h3>
+                                    <p className="text-sm text-white/80">Estamos aquí para ayudarte cuando lo necesites</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </main>
-            <Footer />
         </div>
     );
 }
