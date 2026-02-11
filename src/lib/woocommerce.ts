@@ -79,7 +79,7 @@ export async function getWooCommerceOrders(email: string, customerId?: number): 
   // Otherwise fall back to email
   const queryParam = customerId ? `customer=${customerId}` : `email=${encodeURIComponent(email)}`;
 
-  const response = await fetch(`https://koonetix.shop/wp-json/wc/v3/orders?${queryParam}&per_page=100`, {
+  const response = await fetch(`https://koonetix.shop/wp-json/wc/v3/orders?${queryParam}&status=any&per_page=100&orderby=date&order=desc`, {
     headers: {
       'Authorization': `Basic ${auth}`
     }
