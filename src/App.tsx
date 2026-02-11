@@ -14,6 +14,7 @@ import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import MyAccount from "./pages/MyAccount";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/mi-cuenta" element={<MyAccount />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

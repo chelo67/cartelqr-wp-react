@@ -92,12 +92,12 @@ export default function Login() {
                                     <Label htmlFor="password" className="text-sm font-semibold">
                                         Contraseña
                                     </Label>
-                                    <a
-                                        href="#"
+                                    <Link
+                                        to="/forgot-password"
                                         className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                                     >
                                         ¿Olvidaste tu contraseña?
-                                    </a>
+                                    </Link>
                                 </div>
                                 <div className="relative">
                                     <Input

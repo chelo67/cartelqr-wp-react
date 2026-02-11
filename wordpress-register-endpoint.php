@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Custom User Registration
+ * Plugin Name: Custom User Registration & Password Reset
  * Plugin URI: https://koonetix.shop
- * Description: Endpoint personalizado para registro de usuarios desde la aplicación React
- * Version: 1.0.0
+ * Description: Endpoints personalizados para registro de usuarios y recuperación de contraseña
+ * Version: 1.1.0
  * Author: Koonetix
  * Author URI: https://koonetix.shop
  * License: GPL v2 or later
@@ -16,13 +16,21 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Register custom REST API endpoint for user registration
+ * Register custom REST API endpoints
  */
 add_action('rest_api_init', function () {
+    // Registration endpoint
     register_rest_route('custom/v1', '/register', array(
         'methods' => 'POST',
         'callback' => 'custom_user_registration',
-        'permission_callback' => '__return_true', // Allow public access
+        'permission_callback' => '__return_true',
+    ));
+
+    // Password reset request endpoint
+    register_rest_route('custom/v1', '/reset-password', array(
+        'methods' => 'POST',
+        'callback' => 'custom_password_reset_request',
+        'permission_callback' => '__return_true',
     ));
 });
 
@@ -114,5 +122,79 @@ function custom_user_registration($request)
         'user_id' => $user_id,
         'username' => $username,
         'email' => $email
+    );
+}
+
+/**
+ * Handle password reset request
+ */
+function custom_password_reset_request($request)
+{
+    $user_login = sanitize_text_field($request->get_param('user_login'));
+
+    if (empty($user_login)) {
+        return new WP_Error(
+            'missing_field',
+            'Por favor ingresa tu email o nombre de usuario.',
+            array('status' => 400)
+        );
+    }
+
+    // Try to get user by email or username
+    if (is_email($user_login)) {
+        $user = get_user_by('email', $user_login);
+    } else {
+        $user = get_user_by('login', $user_login);
+    }
+
+    if (!$user) {
+        return new WP_Error(
+            'user_not_found',
+            'No se encontró ningún usuario con ese email o nombre de usuario.',
+            array('status' => 404)
+        );
+    }
+
+    // Generate password reset key
+    $reset_key = get_password_reset_key($user);
+
+    if (is_wp_error($reset_key)) {
+        return new WP_Error(
+            'reset_key_failed',
+            'No se pudo generar el enlace de recuperación.',
+            array('status' => 500)
+        );
+    }
+
+    // Send password reset email
+    $user_email = $user->user_email;
+    $user_login = $user->user_login;
+
+    $subject = 'Recuperación de contraseña - Koonetix';
+
+    $message = "Hola,\n\n";
+    $message .= "Has solicitado restablecer tu contraseña para tu cuenta en Koonetix.\n\n";
+    $message .= "Nombre de usuario: " . $user_login . "\n\n";
+    $message .= "Para restablecer tu contraseña, visita el siguiente enlace:\n\n";
+    $message .= network_site_url("wp-login.php?action=rp&key=$reset_key&login=" . rawurlencode($user_login), 'login') . "\n\n";
+    $message .= "Si no solicitaste este cambio, ignora este correo y tu contraseña permanecerá sin cambios.\n\n";
+    $message .= "Saludos,\n";
+    $message .= "El equipo de Koonetix";
+
+    $headers = array('Content-Type: text/plain; charset=UTF-8');
+
+    $sent = wp_mail($user_email, $subject, $message, $headers);
+
+    if (!$sent) {
+        return new WP_Error(
+            'email_failed',
+            'No se pudo enviar el correo de recuperación.',
+            array('status' => 500)
+        );
+    }
+
+    return array(
+        'success' => true,
+        'message' => 'Se ha enviado un correo con instrucciones para restablecer tu contraseña.'
     );
 }
