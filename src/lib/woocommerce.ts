@@ -102,3 +102,22 @@ export async function getWooCommerceCustomer(email: string): Promise<any> {
   const customers = await response.json();
   return customers.length > 0 ? customers[0] : null;
 }
+
+export async function updateWooCommerceCustomer(id: number, data: any): Promise<any> {
+  const auth = btoa(`${config.ck}:${config.cs}`);
+  const response = await fetch(`https://koonetix.shop/wp-json/wc/v3/customers/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || `Error: ${response.statusText}`);
+  }
+
+  return response.json();
+}

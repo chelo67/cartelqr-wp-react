@@ -14,6 +14,7 @@ interface AuthContextType {
     token: string | null;
     login: (username: string, password: string) => Promise<void>;
     logout: () => void;
+    refreshUser: () => Promise<void>;
     isAuthenticated: boolean;
     isLoading: boolean;
 }
@@ -63,6 +64,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         fetchUser();
     }, [token]);
+
+    const refreshUser = async () => {
+        if (!token) return;
+
+        try {
+            const response = await fetch('https://koonetix.shop/wp-json/wp/v2/users/me?context=edit', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                const userData = await response.json();
+                setUser({
+                    id: userData.id,
+                    username: userData.slug,
+                    email: userData.email || userData.user_email,
+                    firstName: userData.first_name,
+                    lastName: userData.last_name,
+                    displayName: userData.name,
+                });
+            }
+        } catch (error) {
+            console.error('Error refreshing user:', error);
+        }
+    };
 
     const login = async (username: string, password: string) => {
         const response = await fetch('https://koonetix.shop/wp-json/jwt-auth/v1/token', {
@@ -118,6 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 token,
                 login,
                 logout,
+                refreshUser,
                 isAuthenticated: !!token && !!user,
                 isLoading,
             }}

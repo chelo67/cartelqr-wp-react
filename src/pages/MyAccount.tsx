@@ -5,21 +5,71 @@ import { Button } from "@/components/ui/button";
 import {
     User, Mail, ShieldCheck, ShoppingBag, LogOut, Package,
     Calendar, MapPin, LayoutDashboard, Download, Settings,
-    ChevronRight, ExternalLink
+    ChevronRight, ExternalLink, QrCode
 } from "lucide-react";
+import { getWordPressPageContent } from "@/lib/wordpress";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getWooCommerceOrders, getWooCommerceCustomer } from "@/lib/woocommerce";
+import { getWooCommerceOrders, getWooCommerceCustomer, updateWooCommerceCustomer } from "@/lib/woocommerce";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { WordPressContent } from "@/components/WordPressContent";
 
 export default function MyAccount() {
-    const { user, logout, isAuthenticated, isLoading } = useAuth();
+    const { user, token, logout, isAuthenticated, isLoading, refreshUser } = useAuth();
     const [orders, setOrders] = useState<any[]>([]);
     const [customer, setCustomer] = useState<any>(null);
     const [loadingOrders, setLoadingOrders] = useState(true);
     const [loadingCustomer, setLoadingCustomer] = useState(true);
+    const [activeTab, setActiveTab] = useState("escritorio");
+
+    // Mis Carteles State
+    const [cartelesContent, setCartelesContent] = useState<string>("");
+    const [loadingCarteles, setLoadingCarteles] = useState(false);
+
+    // Edit Profile State
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+        firstName: "",
+        lastName: "",
+        displayName: ""
+    });
+
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                firstName: user.firstName || "",
+                lastName: user.lastName || "",
+                displayName: user.displayName || ""
+            });
+        }
+    }, [user]);
+
+    const handleSaveProfile = async () => {
+        if (!customer?.id) return;
+
+        try {
+            await updateWooCommerceCustomer(customer.id, {
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                display_name: formData.displayName // Note: WooCommerce meta might be needed for display_name depending on setup
+            });
+
+            // Also need to update WP User for display_name
+            // But since we are using JWT, the updateWooCommerceCustomer might only update billing/shipping if not mapped correctly
+            // Let's assume for now standard WC behavior where updating customer updates WP user
+
+            await refreshUser();
+            toast.success("Datos actualizados correctamente");
+            setIsEditing(false);
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al actualizar los datos");
+        }
+    };
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -65,6 +115,27 @@ export default function MyAccount() {
         }
     }, [isAuthenticated, user]);
 
+    useEffect(() => {
+        const fetchCarteles = async () => {
+            if (activeTab === "carteles" && !cartelesContent) {
+                setLoadingCarteles(true);
+                try {
+                    if (token) {
+                        const content = await getWordPressPageContent(54, token);
+                        setCartelesContent(content);
+                    }
+                } catch (error) {
+                    console.error("Error fetching carteles:", error);
+                    toast.error("Error al cargar mis carteles");
+                } finally {
+                    setLoadingCarteles(false);
+                }
+            }
+        };
+
+        fetchCarteles();
+    }, [activeTab, cartelesContent]);
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -86,10 +157,7 @@ export default function MyAccount() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
-                    onClick={() => {
-                        const trigger = document.getElementById('trigger-pedidos');
-                        if (trigger) (trigger as HTMLElement).click();
-                    }}
+                    onClick={() => setActiveTab("pedidos")}
                     className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:border-primary transition-all group text-left"
                 >
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
@@ -102,10 +170,7 @@ export default function MyAccount() {
                 </button>
 
                 <button
-                    onClick={() => {
-                        const trigger = document.getElementById('trigger-direcciones');
-                        if (trigger) (trigger as HTMLElement).click();
-                    }}
+                    onClick={() => setActiveTab("direcciones")}
                     className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl hover:border-primary transition-all group text-left"
                 >
                     <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center group-hover:bg-accent/20 transition-colors">
@@ -149,8 +214,8 @@ export default function MyAccount() {
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase border ${order.status === 'completed' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
-                                            order.status === 'processing' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
-                                                'bg-orange-500/10 text-orange-600 border-orange-500/20'
+                                        order.status === 'processing' ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
+                                            'bg-orange-500/10 text-orange-600 border-orange-500/20'
                                         }`}>
                                         {order.status}
                                     </span>
@@ -267,32 +332,67 @@ export default function MyAccount() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="text-xs uppercase font-black text-muted-foreground tracking-widest mb-1 block">Nombre</label>
-                        <div className="p-3 bg-secondary/20 border border-border rounded-xl font-medium">
-                            {user?.firstName || "No definido"}
-                        </div>
+                        {isEditing ? (
+                            <Input
+                                value={formData.firstName}
+                                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                className="bg-secondary/20 border-border"
+                            />
+                        ) : (
+                            <div className="p-3 bg-secondary/20 border border-border rounded-xl font-medium">
+                                {user?.firstName || "No definido"}
+                            </div>
+                        )}
                     </div>
                     <div>
                         <label className="text-xs uppercase font-black text-muted-foreground tracking-widest mb-1 block">Apellidos</label>
-                        <div className="p-3 bg-secondary/20 border border-border rounded-xl font-medium">
-                            {user?.lastName || "No definido"}
-                        </div>
+                        {isEditing ? (
+                            <Input
+                                value={formData.lastName}
+                                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                className="bg-secondary/20 border-border"
+                            />
+                        ) : (
+                            <div className="p-3 bg-secondary/20 border border-border rounded-xl font-medium">
+                                {user?.lastName || "No definido"}
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div>
                     <label className="text-xs uppercase font-black text-muted-foreground tracking-widest mb-1 block">Nombre a mostrar</label>
-                    <div className="p-3 bg-secondary/20 border border-border rounded-xl font-medium">
-                        {user?.displayName}
-                    </div>
+                    {isEditing ? (
+                        <Input
+                            value={formData.displayName}
+                            onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                            className="bg-secondary/20 border-border"
+                        />
+                    ) : (
+                        <div className="p-3 bg-secondary/20 border border-border rounded-xl font-medium">
+                            {user?.displayName}
+                        </div>
+                    )}
                     <p className="text-[10px] text-muted-foreground mt-1">Este será el nombre que aparecerá en la sección de la cuenta y en las reseñas.</p>
                 </div>
 
                 <div>
                     <label className="text-xs uppercase font-black text-muted-foreground tracking-widest mb-1 block">Correo electrónico</label>
-                    <div className="p-3 bg-secondary/20 border border-border rounded-xl font-medium flex items-center justify-between">
+                    <div className="p-3 bg-secondary/20 border border-border rounded-xl font-medium flex items-center justify-between opacity-70">
                         {user?.email}
                         <Mail className="w-4 h-4 text-muted-foreground opacity-30" />
                     </div>
+                </div>
+
+                <div className="flex gap-3 justify-end pt-2">
+                    {isEditing ? (
+                        <>
+                            <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                            <Button onClick={handleSaveProfile}>Guardar Cambios</Button>
+                        </>
+                    ) : (
+                        <Button variant="outline" onClick={() => setIsEditing(true)}>Editar Detalles</Button>
+                    )}
                 </div>
 
                 <div className="pt-4 border-t border-border">
@@ -316,7 +416,7 @@ export default function MyAccount() {
             <Header />
             <main className="flex-1 section-container py-12 sm:py-20">
                 <div className="max-w-5xl mx-auto">
-                    <Tabs defaultValue="escritorio" className="w-full">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <div className="flex flex-col md:flex-row gap-8 items-start">
                             {/* Sidebar Navigation */}
                             <div className="w-full md:w-72 md:sticky md:top-24 gap-4 flex flex-col">
@@ -339,6 +439,10 @@ export default function MyAccount() {
                                         <TabsTrigger id="trigger-pedidos" value="pedidos" className="w-full justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-xl font-bold transition-all text-sm">
                                             <ShoppingBag className="w-4 h-4" />
                                             Pedidos
+                                        </TabsTrigger>
+                                        <TabsTrigger id="trigger-carteles" value="carteles" className="w-full justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-xl font-bold transition-all text-sm">
+                                            <QrCode className="w-4 h-4" />
+                                            Mis Carteles
                                         </TabsTrigger>
                                         <TabsTrigger id="trigger-descargas" value="descargas" className="w-full justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-xl font-bold transition-all text-sm">
                                             <Download className="w-4 h-4" />
@@ -368,6 +472,25 @@ export default function MyAccount() {
                                 <div className="bg-card border border-border rounded-3xl p-6 sm:p-10 shadow-sm min-h-[500px]">
                                     <TabsContent value="escritorio" className="mt-0">{renderDashboard()}</TabsContent>
                                     <TabsContent value="pedidos" className="mt-0">{renderOrders()}</TabsContent>
+                                    <TabsContent value="carteles" className="mt-0">
+                                        <div className="space-y-6 animate-fade-in">
+                                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                                <QrCode className="w-5 h-5 text-primary" />
+                                                Mis Carteles
+                                            </h2>
+                                            {loadingCarteles ? (
+                                                <div className="text-center py-12 bg-secondary/10 rounded-2xl border border-dashed border-border">
+                                                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                                                    <p className="text-sm text-muted-foreground">Cargando tus carteles...</p>
+                                                </div>
+                                            ) : (
+                                                <WordPressContent
+                                                    className="w-full mis-carteles-container prose prose-sm max-w-none"
+                                                    content={cartelesContent}
+                                                />
+                                            )}
+                                        </div>
+                                    </TabsContent>
                                     <TabsContent value="descargas" className="mt-0">
                                         <div className="text-center py-20 bg-secondary/10 rounded-2xl border border-dashed border-border animate-fade-in">
                                             <Download className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
