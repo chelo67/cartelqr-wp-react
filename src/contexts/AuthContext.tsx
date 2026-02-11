@@ -33,7 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             try {
-                const response = await fetch('https://koonetix.shop/wp-json/wp/v2/users/me', {
+                // Use context=edit to get more fields like email
+                const response = await fetch('https://koonetix.shop/wp-json/wp/v2/users/me?context=edit', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
@@ -44,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setUser({
                         id: userData.id,
                         username: userData.slug,
-                        email: userData.email,
+                        email: userData.email || userData.user_email, // Fallback just in case
                         firstName: userData.first_name,
                         lastName: userData.last_name,
                         displayName: userData.name,
@@ -77,11 +78,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw new Error(errorData.message || 'Credenciales inválidas o servidor no configurado');
         }
 
-        const { token: newToken, user_display_name, user_email, user_nicename } = await response.json();
+        const data = await response.json();
+        const newToken = data.token;
 
         localStorage.setItem('wp_jwt_token', newToken);
+
+        // Fetch user data immediately to ensure state is consistent before completing login
+        const userResponse = await fetch('https://koonetix.shop/wp-json/wp/v2/users/me', {
+            headers: {
+                'Authorization': `Bearer ${newToken}`,
+            },
+        });
+
+        if (userResponse.ok) {
+            const userData = await userResponse.json();
+            setUser({
+                id: userData.id,
+                username: userData.slug,
+                email: userData.email,
+                firstName: userData.first_name,
+                lastName: userData.last_name,
+                displayName: userData.name,
+            });
+        }
+
         setToken(newToken);
-        // User object will be fetched by the useEffect
     };
 
     const logout = () => {

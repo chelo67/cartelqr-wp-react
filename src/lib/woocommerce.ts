@@ -71,3 +71,34 @@ export async function createWooCommerceOrder(orderPayload: any): Promise<any> {
 
   return response.json();
 }
+
+export async function getWooCommerceOrders(email: string): Promise<any[]> {
+  const auth = btoa(`${config.ck}:${config.cs}`);
+  const response = await fetch(`https://koonetix.shop/wp-json/wc/v3/orders?email=${email}`, {
+    headers: {
+      'Authorization': `Basic ${auth}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch orders: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function getWooCommerceCustomer(email: string): Promise<any> {
+  const auth = btoa(`${config.ck}:${config.cs}`);
+  const response = await fetch(`https://koonetix.shop/wp-json/wc/v3/customers?email=${email}`, {
+    headers: {
+      'Authorization': `Basic ${auth}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch customer: ${response.statusText}`);
+  }
+
+  const customers = await response.json();
+  return customers.length > 0 ? customers[0] : null;
+}

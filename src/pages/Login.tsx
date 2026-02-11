@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogIn, Loader2, AlertCircle } from "lucide-react";
+import { LogIn, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Login() {
@@ -15,12 +15,13 @@ export default function Login() {
     const { login } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
         username: "",
         password: "",
     });
 
-    const from = (location.state as any)?.from?.pathname || "/";
+    const from = (location.state as any)?.from?.pathname || "/mi-cuenta";
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -83,15 +84,29 @@ export default function Login() {
                                     <Label htmlFor="password">Contraseña</Label>
                                     <a href="#" className="text-xs text-primary hover:underline">¿Olvidaste tu contraseña?</a>
                                 </div>
-                                <Input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    placeholder="••••••••"
-                                    value={formData.password}
-                                    onChange={handleInputChange}
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        name="password"
+                                        type={showPassword ? "text" : "password"}
+                                        required
+                                        placeholder="••••••••"
+                                        className="pr-10"
+                                        value={formData.password}
+                                        onChange={handleInputChange}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="w-5 h-5" />
+                                        ) : (
+                                            <Eye className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
 
                             <Button type="submit" variant="hero" className="w-full text-lg h-12" disabled={loading}>

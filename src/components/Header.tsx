@@ -52,7 +52,9 @@ export function Header() {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground">Hola, {user?.displayName}</span>
+                <Link to="/mi-cuenta" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                  Hola, {user?.displayName}
+                </Link>
                 <Button variant="ghost" size="sm" onClick={logout}>
                   Cerrar sesión
                 </Button>
@@ -108,7 +110,11 @@ export function Header() {
               <div className="flex flex-col gap-2 mt-4 px-4">
                 {isAuthenticated ? (
                   <>
-                    <span className="text-xs font-medium text-muted-foreground px-1">Conectado como {user?.displayName}</span>
+                    <Link to="/mi-cuenta" onClick={() => setMobileMenuOpen(false)}>
+                      <span className="text-xs font-medium text-muted-foreground px-1 hover:text-primary transition-colors">
+                        Conectado como {user?.displayName}
+                      </span>
+                    </Link>
                     <Button variant="outline" className="w-full justify-start" onClick={() => { logout(); setMobileMenuOpen(false); }}>
                       Cerrar sesión
                     </Button>
