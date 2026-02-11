@@ -33,10 +33,8 @@ export default function Register() {
         setError("");
 
         try {
-            // In a real WP setup without a custom registration endpoint, 
-            // this would typically hit wp/v2/users if registration is open,
-            // or a specific plugin endpoint. For now, we point to the requirement.
-            const response = await fetch('https://koonetix.shop/wp-json/wp/v2/users/register', {
+            // Use custom registration endpoint
+            const response = await fetch('https://koonetix.shop/wp-json/custom/v1/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -50,9 +48,12 @@ export default function Register() {
                 }),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Error al registrarse. Asegúrate de que el registro esté habilitado.");
+                // Handle WordPress error format
+                const errorMessage = data.message || data.code || "Error al registrarse";
+                throw new Error(errorMessage);
             }
 
             toast.success("¡Cuenta creada con éxito! Ya puedes iniciar sesión.");
