@@ -81,7 +81,9 @@ export default function MyAccount() {
         const fetchOrders = async () => {
             if (user?.email) {
                 try {
-                    const ordersData = await getWooCommerceOrders(user.email);
+                    // Wait for customer data to be available to get customer ID
+                    // This ensures we filter by customer ID which is more reliable
+                    const ordersData = await getWooCommerceOrders(user.email, customer?.id);
                     setOrders(ordersData);
                 } catch (error) {
                     console.error("Error fetching orders:", error);
@@ -110,10 +112,12 @@ export default function MyAccount() {
         };
 
         if (isAuthenticated && user) {
-            fetchOrders();
-            fetchCustomer();
+            // Fetch customer first, then orders
+            fetchCustomer().then(() => {
+                fetchOrders();
+            });
         }
-    }, [isAuthenticated, user]);
+    }, [isAuthenticated, user, customer?.id]);
 
     useEffect(() => {
         const fetchCarteles = async () => {

@@ -72,9 +72,14 @@ export async function createWooCommerceOrder(orderPayload: any): Promise<any> {
   return response.json();
 }
 
-export async function getWooCommerceOrders(email: string): Promise<any[]> {
+export async function getWooCommerceOrders(email: string, customerId?: number): Promise<any[]> {
   const auth = btoa(`${config.ck}:${config.cs}`);
-  const response = await fetch(`https://koonetix.shop/wp-json/wc/v3/orders?email=${email}`, {
+
+  // If customerId is provided, use it for filtering (more reliable)
+  // Otherwise fall back to email
+  const queryParam = customerId ? `customer=${customerId}` : `email=${encodeURIComponent(email)}`;
+
+  const response = await fetch(`https://koonetix.shop/wp-json/wc/v3/orders?${queryParam}&per_page=100`, {
     headers: {
       'Authorization': `Basic ${auth}`
     }
@@ -84,7 +89,17 @@ export async function getWooCommerceOrders(email: string): Promise<any[]> {
     throw new Error(`Failed to fetch orders: ${response.statusText}`);
   }
 
-  return response.json();
+  const orders = await response.json();
+
+  // Double-check: filter by email on client side as extra security measure
+  // This ensures only orders matching the user's email are returned
+  if (email && !customerId) {
+    return orders.filter((order: any) =>
+      order.billing?.email?.toLowerCase() === email.toLowerCase()
+    );
+  }
+
+  return orders;
 }
 
 export async function getWooCommerceCustomer(email: string): Promise<any> {
