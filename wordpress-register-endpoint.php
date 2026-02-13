@@ -15,9 +15,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Register custom REST API endpoints
- */
 add_action('rest_api_init', function () {
     // Registration endpoint
     register_rest_route('custom/v1', '/register', array(
@@ -26,13 +23,104 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
     ));
 
-    // Password reset request endpoint
-    register_rest_route('custom/v1', '/reset-password', array(
-        'methods' => 'POST',
-        'callback' => 'custom_password_reset_request',
+    // Nonce endpoint
+    register_rest_route('custom/v1', '/store-nonce', array(
+        'methods' => 'GET',
+        'callback' => function () {
+            return array(
+                'nonce' => wp_create_nonce('wc_store_api')
+            );
+        },
         'permission_callback' => '__return_true',
     ));
+
+    // Debug cookies endpoint
+    register_rest_route('custom/v1', '/debug-cookies', array(
+        'methods' => 'GET',
+        'callback' => function () {
+            return new WP_REST_Response(array(
+                'cookies' => $_COOKIE,
+                'headers' => getallheaders(),
+                'server_origin' => $_SERVER['HTTP_ORIGIN'] ?? 'none'
+            ), 200);
+        },
+        'permission_callback' => '__return_true'
+    ));
 });
+
+/**
+ * Handle CORS for WooCommerce Store API
+ */
+/**
+ * Robust CORS handling for WooCommerce Store API and REST API
+ */
+// Disable Store API nonce check for development (Localhost cross-origin compatibility)
+add_filter('woocommerce_store_api_disable_nonce_check', '__return_true');
+
+/**
+ * Force SameSite=None; Secure for WooCommerce cookies to allow cross-origin sessions
+ * This is critical for development on localhost vs production server.
+ */
+add_filter('woocommerce_cookie_options', function ($options) {
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        $options['samesite'] = 'None';
+        $options['secure'] = true;
+    }
+    return $options;
+});
+
+add_action('init', function () {
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+        header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
+        header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Expose-Headers: X-WC-Store-API-Nonce, Nonce, Cart-Token');
+
+        if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+            header('Access-Control-Allow-Headers: X-WC-Store-API-Nonce, Nonce, Cart-Token, Content-Type, Authorization, X-Requested-With');
+            status_header(200);
+            exit;
+        }
+    }
+});
+
+// Official WordPress REST API CORS headers filters
+add_filter('rest_allowed_cors_headers', function ($headers) {
+    if (!in_array('X-WC-Store-API-Nonce', $headers)) {
+        $headers[] = 'X-WC-Store-API-Nonce';
+    }
+    if (!in_array('Nonce', $headers)) {
+        $headers[] = 'Nonce';
+    }
+    if (!in_array('Cart-Token', $headers)) {
+        $headers[] = 'Cart-Token';
+    }
+    return $headers;
+});
+
+add_filter('rest_exposed_cors_headers', function ($headers) {
+    if (!in_array('X-WC-Store-API-Nonce', $headers)) {
+        $headers[] = 'X-WC-Store-API-Nonce';
+    }
+    if (!in_array('Nonce', $headers)) {
+        $headers[] = 'Nonce';
+    }
+    if (!in_array('Cart-Token', $headers)) {
+        $headers[] = 'Cart-Token';
+    }
+    return $headers;
+});
+
+// Additional hook to ensure headers are sent in REST responses
+add_filter('rest_pre_serve_request', function ($served, $result, $request, $server) {
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        $server->send_header('Access-Control-Allow-Origin', $_SERVER['HTTP_ORIGIN']);
+        $server->send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+        $server->send_header('Access-Control-Allow-Credentials', 'true');
+        $server->send_header('Access-Control-Expose-Headers', 'X-WC-Store-API-Nonce, Nonce, Cart-Token');
+    }
+    return $served;
+}, 10, 4);
 
 /**
  * Handle user registration
