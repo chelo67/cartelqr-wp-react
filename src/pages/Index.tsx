@@ -6,6 +6,13 @@ import { StepCard } from "@/components/StepCard";
 import { BenefitItem } from "@/components/BenefitItem";
 import { TestimonialCard } from "@/components/TestimonialCard";
 import { ShoppingCart, Play, CreditCard, Smartphone, QrCode, Star, Zap, Globe, Edit, RefreshCcw } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getWooCommerceProducts } from "@/lib/woocommerce";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 // Import images
 import heroImage from "@/assets/hero-display.jpg";
@@ -13,28 +20,7 @@ import productDisplay1 from "@/assets/product-display-1.jpg";
 import productDisplay2 from "@/assets/product-display-2.jpg";
 import productCard1 from "@/assets/product-card-1.jpg";
 
-const products = [
-  {
-    image: productDisplay2,
-    title: "Expositor Google Reseñas NFC + QR",
-    description: "Aumenta tus reseñas en Google con un tap o escáner",
-    price: 29.99,
-    badge: "Más vendido",
-  },
-  {
-    image: productDisplay1,
-    title: "Expositor Universal NFC + QR",
-    description: "Configúralo para cualquier destino: web, redes, menú...",
-    price: 24.99,
-  },
-  {
-    image: productCard1,
-    title: "Tarjeta NFC Premium",
-    description: "Compacta y elegante. Perfecta para entregar o dejar en mesa",
-    price: 14.99,
-    badge: "Nuevo",
-  },
-];
+// Static testimonials and benefits remain the same
 
 const testimonials = [
   {
@@ -64,10 +50,17 @@ const benefits = [
 ];
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { addItem } = useCart();
+  const { data: products, isLoading, error } = useQuery({
+    queryKey: ["woo-products-featured"],
+    queryFn: getWooCommerceProducts,
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       {/* Hero Section */}
       <section className="relative overflow-hidden hero-bg">
         <div className="section-container py-16 md:py-24 lg:py-32">
@@ -83,7 +76,7 @@ const Index = () => {
                 <span className="text-gradient">reseña o contacto</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
-                Expositores y tarjetas NFC + QR listos para usar en tu negocio. 
+                Expositores y tarjetas NFC + QR listos para usar en tu negocio.
                 Sin apps. Sin complicaciones. Solo resultados.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -96,7 +89,7 @@ const Index = () => {
                   Ver cómo funciona
                 </Button>
               </div>
-              
+
               {/* Social proof mini */}
               <div className="flex items-center gap-4 mt-8 justify-center lg:justify-start">
                 <div className="flex -space-x-2">
@@ -116,13 +109,13 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Hero Image */}
             <div className="relative animate-fade-in-up lg:order-last">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-primary/10">
-                <img 
-                  src={heroImage} 
-                  alt="Expositor NFC en mostrador de café" 
+                <img
+                  src={heroImage}
+                  alt="Expositor NFC en mostrador de café"
                   className="w-full h-auto"
                 />
                 {/* Floating badge */}
@@ -136,7 +129,7 @@ const Index = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute top-1/4 -right-64 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
@@ -156,21 +149,21 @@ const Index = () => {
               En 3 sencillos pasos tendrás tu expositor funcionando y recibiendo reseñas
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
-            <StepCard 
+            <StepCard
               step={1}
               icon={<CreditCard className="w-10 h-10" />}
               title="Compra tu expositor"
               description="Elige el diseño que mejor se adapte a tu negocio y recíbelo en casa"
             />
-            <StepCard 
+            <StepCard
               step={2}
               icon={<Smartphone className="w-10 h-10" />}
               title="Escanea y activa"
               description="Configura el enlace de destino con nuestro panel online en segundos"
             />
-            <StepCard 
+            <StepCard
               step={3}
               icon={<Star className="w-10 h-10" />}
               title="Recibe reseñas"
@@ -192,17 +185,43 @@ const Index = () => {
               Diseñados para durar y causar una excelente impresión en tus clientes
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product, i) => (
-              <ProductCard key={i} {...product} />
-            ))}
+            {isLoading ? (
+              // Skeletons
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="space-y-4">
+                  <Skeleton className="aspect-square w-full rounded-2xl" />
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ))
+            ) : error ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-destructive font-medium">Error al cargar los productos. Por favor, inténtalo de nuevo.</p>
+              </div>
+            ) : (
+              products?.slice(0, 3).map((product) => (
+                <ProductCard
+                  key={product.id}
+                  image={product.images[0]?.src || "/placeholder.svg"}
+                  title={product.name}
+                  description={product.short_description.replace(/<[^>]*>?/gm, '')}
+                  price={parseFloat(product.price)}
+                  onBuy={() => {
+                    navigate(`/producto/${product.id}`);
+                  }}
+                />
+              ))
+            )}
           </div>
-          
+
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
-              Ver todos los productos
-            </Button>
+            <Link to="/productos">
+              <Button variant="outline" size="lg">
+                Ver todos los productos
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -217,17 +236,17 @@ const Index = () => {
                 ¿Por qué elegir TapReview?
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
-                Diseñamos productos que simplemente funcionan. Sin complicaciones técnicas, 
+                Diseñamos productos que simplemente funcionan. Sin complicaciones técnicas,
                 sin necesidad de apps, sin suscripciones.
               </p>
-              
+
               <div className="grid sm:grid-cols-2 gap-3">
                 {benefits.map((benefit, i) => (
                   <BenefitItem key={i} text={benefit} />
                 ))}
               </div>
             </div>
-            
+
             <div className="relative">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-4">
@@ -272,7 +291,7 @@ const Index = () => {
               Más de 500 negocios ya confían en TapReview para impulsar sus reseñas
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, i) => (
               <TestimonialCard key={i} {...testimonial} />
@@ -290,8 +309,8 @@ const Index = () => {
           <p className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
             Únete a más de 500 negocios que ya usan TapReview para impulsar su reputación online
           </p>
-          <Button 
-            variant="heroOutline" 
+          <Button
+            variant="heroOutline"
             size="xl"
             className="bg-background text-foreground hover:bg-background/90 border-0"
           >

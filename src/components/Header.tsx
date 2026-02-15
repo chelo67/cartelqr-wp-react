@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/productos", label: "Productos" },
   { href: "/como-funciona", label: "Cómo funciona" },
   { href: "/faq", label: "FAQ" },
+  { href: "/tutoriales", label: "Artículos" },
 ];
 
 export function Header() {

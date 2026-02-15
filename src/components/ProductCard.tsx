@@ -10,7 +10,7 @@ interface ProductCardProps {
   onBuy?: () => void;
 }
 
-export function ProductCard({ image, title, description, price, badge, buttonText = "Comprar", onBuy }: ProductCardProps) {
+export function ProductCard({ image, title, description, price, badge, buttonText = "Ver producto", onBuy }: ProductCardProps) {
   return (
     <div className="group relative bg-card rounded-2xl overflow-hidden card-interactive">
       {/* Badge */}

@@ -16,6 +16,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import MyAccount from "./pages/MyAccount";
+import Tutoriales from "./pages/Tutoriales";
+import TutorialPost from "./pages/TutorialPost";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,8 @@ const App = () => (
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/mi-cuenta" element={<MyAccount />} />
+              <Route path="/tutoriales" element={<Tutoriales />} />
+              <Route path="/tutoriales/:slug" element={<TutorialPost />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

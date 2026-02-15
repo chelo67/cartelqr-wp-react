@@ -78,46 +78,40 @@ export default function MyAccount() {
     }, [isAuthenticated, isLoading, navigate]);
 
     useEffect(() => {
-        const fetchOrders = async () => {
-            if (user?.email) {
-                try {
-                    // Wait for customer data to be available to get customer ID
-                    // This ensures we filter by customer ID which is more reliable
-                    const ordersData = await getWooCommerceOrders(user.email, customer?.id);
-                    setOrders(ordersData);
-                } catch (error) {
-                    console.error("Error fetching orders:", error);
-                    toast.error("Error al cargar tus pedidos");
-                } finally {
-                    setLoadingOrders(false);
+        const fetchData = async () => {
+            if (!isAuthenticated || !user) return;
+
+            // Fetch Customer
+            try {
+                if (user.email) {
+                    const customerData = await getWooCommerceCustomer(user.email);
+                    setCustomer(customerData);
+                    console.log('Customer data loaded:', customerData);
                 }
-            } else {
+            } catch (error) {
+                console.error("Error fetching customer details:", error);
+            } finally {
+                setLoadingCustomer(false);
+            }
+
+            // Fetch Orders
+            try {
+                if (user.id) {
+                    console.log('Fetching orders for User ID:', user.id, 'Email:', user.email);
+                    const ordersData = await getWooCommerceOrders(user.email, user.id);
+                    console.log('Orders received:', ordersData.length, ordersData);
+                    setOrders(ordersData);
+                }
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+                toast.error("Error al cargar tus pedidos");
+            } finally {
                 setLoadingOrders(false);
             }
         };
 
-        const fetchCustomer = async () => {
-            if (user?.email) {
-                try {
-                    const customerData = await getWooCommerceCustomer(user.email);
-                    setCustomer(customerData);
-                } catch (error) {
-                    console.error("Error fetching customer details:", error);
-                } finally {
-                    setLoadingCustomer(false);
-                }
-            } else {
-                setLoadingCustomer(false);
-            }
-        };
-
-        if (isAuthenticated && user) {
-            // Fetch customer first, then orders
-            fetchCustomer().then(() => {
-                fetchOrders();
-            });
-        }
-    }, [isAuthenticated, user, customer?.id]);
+        fetchData();
+    }, [isAuthenticated, user?.id, user?.email]);
 
     useEffect(() => {
         const fetchCarteles = async () => {
